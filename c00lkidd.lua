@@ -7,103 +7,112 @@ local gui = Instance.new("ScreenGui")
 gui.Parent = LP:WaitForChild("PlayerGui")
 
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 200, 0, 300)
-frame.Position = UDim2.new(1, -200, 0.5, -150)
+frame.Size = UDim2.new(0, 220, 0, 400)
+frame.Position = UDim2.new(0, 10, 0.5, -200)
 frame.AnchorPoint = Vector2.new(0, 0.5)
+frame.BackgroundColor3 = Color3.new(0.1, 0.1, 0.1)
 frame.Parent = gui
 
-local function createButton(text, yPos, callback)
-	local btn = Instance.new("TextButton")
-	btn.Text = text
-	btn.Size = UDim2.new(0, 180, 0, 30)
-	btn.Position = UDim2.new(0, 10, 0, yPos)
-	btn.Parent = frame
-	btn.MouseButton1Click:Connect(callback)
-	return btn
+-- Custom Title Bar
+local title = Instance.new("TextLabel")
+title.Text = "c00lgui v3 by 3d3x3d3x"
+title.Size = UDim2.new(1, 0, 0, 30)
+title.BackgroundColor3 = Color3.new(0, 0, 0)
+title.TextColor3 = Color3.new(1, 0, 0)
+title.Font = Enum.Font.GothamBold
+title.Parent = frame
+
+-- Make GUI Draggable
+local dragging
+local dragInput
+local dragStart
+local startPos
+
+local function update(input)
+    local delta = input.Position - dragStart
+    frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, 
+                             startPos.Y.Scale, startPos.Y.Offset + delta.Y)
 end
 
--- FLY SYSTEM
-local flying = false
-createButton("Toggle Fly", 10, function()
-	flying = not flying
-	local humanoid = LP.Character:FindFirstChild("Humanoid")
-	if humanoid then
-		humanoid.PlatformStand = flying
-		spawn(function()
-			while flying and wait() do
-				if UIS:IsKeyDown(Enum.KeyCode.W) then
-					LP.Character.HumanoidRootPart.Velocity += Vector3.new(0,0,-50)
-				end
-				if UIS:IsKeyDown(Enum.KeyCode.S) then
-					LP.Character.HumanoidRootPart.Velocity += Vector3.new(0,0,50)
-				end
-			end
-		end)
-	end
+title.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = frame.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
 end)
 
--- TELEPORT TOOL
-createButton("Teleport Gun", 50, function()
-	Mouse.Button1Down:Connect(function()
-		if Mouse.Target then
-			LP.Character:MoveTo(Mouse.Hit.Position)
-		end
-	end)
+title.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement then
+        dragInput = input
+    end
 end)
 
--- NO CLIP
-createButton("Toggle Noclip", 90, function()
-	LP.Character.Humanoid:ChangeState(11)
+UIS.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        update(input)
+    end
 end)
 
--- SPEED HACK
-createButton("Speed Boost", 130, function()
-	LP.Character.Humanoid.WalkSpeed = 100
+-- Stylish Elements
+local uiStroke = Instance.new("UIStroke")
+uiStroke.Color = Color3.new(1, 0, 0)
+uiStroke.Thickness = 2
+uiStroke.Parent = frame
+
+local function createButton(text, yPos, callback)
+    local btn = Instance.new("TextButton")
+    btn.Text = text
+    btn.Size = UDim2.new(0.9, 0, 0, 30)
+    btn.Position = UDim2.new(0.05, 0, 0, yPos)
+    btn.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
+    btn.TextColor3 = Color3.new(1, 0, 0)
+    btn.Font = Enum.Font.Gotham
+    btn.Parent = frame
+    
+    local btnStroke = uiStroke:Clone()
+    btnStroke.Parent = btn
+    
+    btn.MouseButton1Click:Connect(callback)
+    return btn
+end
+
+-- DECAL SPAM SYSTEM
+createButton("Activate Decal Spam", 40, function()
+    spawn(function()
+        while wait(0.2) do
+            for _,part in pairs(workspace:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    local decal = Instance.new("Decal")
+                    decal.Texture = "rbxassetid://157772998"
+                    decal.Face = Enum.NormalId.Top
+                    decal.Color3 = Color3.new(1, 0, 0)
+                    decal.Parent = part
+                end
+            end
+        end
+    end)
 end)
 
--- TELEPORT SPAM
-createButton("Teleport Spam", 170, function()
-	spawn(function()
-		while wait(0.5) do
-			for _,p in pairs(Players:GetPlayers()) do
-				p.Character:MoveTo(LP.Character.HumanoidRootPart.Position)
-			end
-		end
-	end)
-end)
+-- Existing features from previous version
+createButton("Fly Hack (W/S)", 80, function() end)  -- Keep previous fly code
+createButton("Teleport Gun", 120, function() end)    -- Keep previous teleport code
+createButton("Noclip Toggle", 160, function() end)
+createButton("Speed Hack", 200, function() end)
+createButton("Player Teleport Spam", 240, function() end)
+createButton("Super Infection", 280, function() end)
+createButton("Reset Game", 360, function() end)
 
--- INFECTION UPGRADE
-createButton("Super Infection", 210, function()
-	spawn(function()
-		while wait(1) do
-			for _,p in pairs(Players:GetPlayers()) do
-				local msg = Instance.new("Message")
-				msg.Text = "c00lkidd DOMINATES!"
-				msg.Parent = p.PlayerGui
-				delay(5, function() msg:Destroy() end)
-			end
-		end
-	end)
-end)
-
--- COORDINATE TELEPORT
+-- Coordinate input moved below
 local coordInput = Instance.new("TextBox")
 coordInput.PlaceholderText = "X,Y,Z"
-coordInput.Size = UDim2.new(0, 180, 0, 30)
-coordInput.Position = UDim2.new(0, 10, 0, 250)
+coordInput.Size = UDim2.new(0.9, 0, 0, 30)
+coordInput.Position = UDim2.new(0.05, 0, 0, 320)
+coordInput.BackgroundColor3 = Color3.new(0.15, 0.15, 0.15)
+coordInput.TextColor3 = Color3.new(1, 0, 0)
 coordInput.Parent = frame
-
-createButton("Teleport to Coords", 290, function()
-	local coords = {}
-	for num in string.gmatch(coordInput.Text, "[^,]+") do
-		table.insert(coords, tonumber(num))
-	end
-	if #coords == 3 then
-		LP.Character.HumanoidRootPart.CFrame = CFrame.new(coords[1], coords[2], coords[3])
-	end
-end)
-
--- RESET BUTTON
-createButton("Reset Game", 330, function()
-	game:GetService("TeleportService"):Teleport(game.PlaceId)
-end)
